@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
     const filePath = path.join(uploadsDir, file.name);
     await writeFile(filePath, buffer);
 
-    const fileUrl = `/uploads/${file.name}`;
+    const baseUrl = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    const fileUrl = `${baseUrl}/uploads/${file.name}`;
+
     return NextResponse.json({ url: fileUrl });
   } catch (error) {
     console.error(error);
