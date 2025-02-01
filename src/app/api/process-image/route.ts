@@ -35,6 +35,10 @@ import { fal } from "@fal-ai/client";
 
 export async function POST(req: Request) {
   try {
+    fal.config({
+      credentials: process.env.FAL_AI_KEY,
+    });
+
     const body = await req.json();
 
     if (!body?.image_url) throw new Error("Not found 'image_url' field");
@@ -43,12 +47,12 @@ export async function POST(req: Request) {
       input: {
         image_url: body?.image_url,
       },
-      logs: true,
-      onQueueUpdate: (update) => {
-        if (update.status === "IN_PROGRESS") {
-          update.logs.map((log) => log.message).forEach(console.log);
-        }
-      },
+      //   logs: true,
+      //   onQueueUpdate: (update) => {
+      //     if (update.status === "IN_PROGRESS") {
+      //       update.logs.map((log) => log.message).forEach(console.log);
+      //     }
+      //   },
     });
 
     // return NextResponse.json({ result: "ok" });
