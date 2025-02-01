@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Upload } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+import {
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Label,
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components";
+import { handleDownload } from "@/utils/download-image";
 
 export default function ImageProcessor() {
   const [inputImage, setInputImage] = useState<string | null>(null);
@@ -17,16 +24,8 @@ export default function ImageProcessor() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // const file = e.target.files?.[0];
-    // if (file) {
-    //   const reader = new FileReader();
-    //   reader.onload = (e) => {
-    //     setInputImage(e.target?.result as string);
-    //     setOutputImage(null);
-    //     setError(null);
-    //   };
-    //   reader.readAsDataURL(file);
-    // }
+    setIsLoading(true);
+
     const formData = new FormData();
     const file = e.target.files?.[0];
     if (!file) return null;
@@ -51,6 +50,8 @@ export default function ImageProcessor() {
     } else {
       setError(data.error.message);
     }
+
+    setIsLoading(false);
   };
 
   const processImage = async () => {
@@ -68,14 +69,12 @@ export default function ImageProcessor() {
         body: JSON.stringify({ image_url: uploadedImageUrl }),
       });
 
-      console.log(inputImage);
-
       if (!response.ok) {
         throw new Error("Failed to process image");
       }
 
-      const data = await response.json();
-      setOutputImage(data.result);
+      const res = await response.json();
+      setOutputImage(res.result.data.image.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -83,9 +82,16 @@ export default function ImageProcessor() {
     }
   };
 
+  const onClickDownload = () => {
+    if (!outputImage) return;
+    handleDownload(outputImage, "image_without_background.png");
+  };
+
   return (
     <div className="container mx-auto py-10 px-4">
-      <h1 className="text-4xl font-bold text-center mb-8">Image Processor</h1>
+      <h1 className="text-4xl font-bold text-center mb-8">
+        Background Removal
+      </h1>
 
       <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         <Card>
@@ -120,14 +126,19 @@ export default function ImageProcessor() {
             <div className="space-y-4">
               <Label>Result</Label>
               {outputImage ? (
-                <div className="relative aspect-square w-full">
-                  <Image
-                    src={outputImage || "/placeholder.svg"}
-                    alt="Processed image"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
+                <>
+                  <div className="relative aspect-square w-full">
+                    <Image
+                      src={outputImage || "/placeholder.svg"}
+                      alt="Processed image"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <Button variant={"outline"} onClick={onClickDownload}>
+                    Download <Download />
+                  </Button>
+                </>
               ) : (
                 <div className="aspect-square w-full border-2 border-dashed rounded-lg flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
@@ -151,7 +162,7 @@ export default function ImageProcessor() {
       <div className="flex justify-center mt-6">
         <Button
           onClick={processImage}
-          disabled={!inputImage || isLoading}
+          disabled={!uploadedImageUrl || isLoading}
           className="w-full max-w-sm"
         >
           {isLoading ? "Processing..." : "Process Image"}
