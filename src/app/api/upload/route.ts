@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     const fileUrl = `/uploads/${file.name}`;
     return NextResponse.json({ url: fileUrl });
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
